@@ -1,0 +1,16 @@
+#
+# Edit Lock-Stake file. CAUTION: Please do not change.
+#
+# Information about current Edit Lock Owner.
+#
+LockStakeVersion               1.1
+LoginName                      work
+HostName                       work-eda
+ProcessIdentifier              3523
+ProcessCreationTime_UTC        1729517567
+ProcessCreationTime_Readable   Mon Oct 21 21:32:47 2024 CST
+AppIdentifier                  /opt/IC617/tools/dfII/bin/64bit/virtuoso
+OSType                         lnx86
+ReasonForPlacingEditLock       
+FilePathUsedToEditLock         /home/work/Desktop/ICECS2024_MYC_EL_AC/cell_v1/constraint/prop.cfg
+TimeEditLocked                 Mon Oct 21 21:33:21 2024 CST
