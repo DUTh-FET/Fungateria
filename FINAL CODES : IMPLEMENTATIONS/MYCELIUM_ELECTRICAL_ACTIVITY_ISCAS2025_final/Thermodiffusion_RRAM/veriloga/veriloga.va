@@ -1,0 +1,135 @@
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module Thermodiffusion_RRAM( top, bot );
+
+	inout top, bot;
+	electrical top, bot;
+   
+	real kb =  `P_K;	// Boltzmann's constant= 1.3806503e-23 (J/K)
+	//real q =  `P_Q;		// Electron charge= 1.6e-19 (C)
+
+	// Device parameters
+    parameter real pi = 3.1415;
+    parameter real q =1.602176634E-19;
+	parameter real rT=10E-9;
+	parameter real rB=4E-9;
+	parameter real phi_max=2E-9;
+	parameter real phi_min=0.01E-9;
+	parameter real L=20E-9;
+	parameter real g=10E-9;
+	parameter real sigma0=2E5;
+	parameter real sigmaox=1.65;
+	parameter real alpha=0.5;
+	parameter real Tamb=300;
+	parameter real aT=1.1E-3;
+	parameter real kth=20;
+	parameter real h=1E10;
+	parameter real Aredox=1E5;
+	parameter real Edrift=1.25*1.602176634E-19;
+	parameter real Ediff=1.5*1.602176634E-19;
+	parameter real Es=1*1.602176634E-19;
+	parameter real alphaP=5.8;
+	parameter real alphaN=0.96;
+	parameter real BP=1E-5;
+	parameter real CP=0.6e-24;
+	parameter real AP=5E-1;
+	parameter real BN=2E-13;
+	parameter real CN=1E-24;
+	parameter real rbulkm=3e-07;
+	parameter real rbulkox=0.15E2;
+	parameter real gamma=1E-9;
+	parameter real m=2000E-9;
+	parameter real rm=900;
+	parameter real p=0.5;
+	parameter real el=28E-9;
+	parameter real fiat=0.25E-9;
+   
+	parameter real Cth= 5e-20;
+	parameter real Tau_th= 2.3e-10;
+	parameter real Aexp=1/0.05;
+    parameter real phi_init=0.24E-9;
+   
+	// Internal parameters
+	real T,v,phi,rx1,rx2,rcf,E,rox,Roff,Ron,Rt,kthcold,kthhot,Icur,Tcold,Thot,S;
+	
+    //parameter real tstep = 1e-9 from (0:inf);	// Max. internal timestep (s)
+	real c_time;	// Current timestep (s)
+	real p_time;	// Previous timestep (s)
+	real dt;		// Difference between current and previous timestep (s)
+
+//Step Functions 1
+/*	analog function real st_f;
+		input y;
+		real y;
+		real yo=1E-12;
+		begin
+			st_f=1/(exp(-y/yo)+1);            
+		end
+	endfunction
+
+//Step Functions 2
+	analog function real st2_f;
+		input y;
+		real y;
+		real yoo=1E-15;
+	begin
+		st2_f=1/(exp(-y/yoo)+1);            
+	end
+	endfunction
+*/
+	analog begin
+		// Initialization of Temperature and State Variable
+		@(initial_step)  begin
+			Thot= Tamb;
+			Tcold= Tamb;
+			phi = phi_init; //0.24E-9;
+		end
+
+		//$bound_step(tstep);	// Bound the time step
+		c_time = $abstime;	// Get current timestep
+		dt = c_time-p_time;		
+		
+		v=V(top,bot);
+
+		//Calculations of memristor's resistance based on truncated cone geometry, applied voltage and filament's diameter (phi)
+		rx1=rT-((rT-(phi/2))/(L/2))*((L/2)-g);
+		rx2=rB-((rB-(phi/2))/(L/2))*((L/2)-g);
+		rcf=rbulkm*(1+(3/4)*(el/phi)*(1-p));
+		E=v/g;
+		rox=rbulkox/(1+gamma*abs(E));
+		//Roff=((rcf*(L-g)/2)/(pi*rT*rx1)+(rcf*(L-g)/2)/(pi*rB*rx2)+(rox*g)/(pi*rx1*rx2));
+		//Ron=((rcf*L/2)/(pi*rT*phi/2)+(rcf*L/2)/(pi*rB*phi/2));
+		//Rt=st2_f(phi-fiat)*Ron + st2_f(fiat-phi)*Roff;
+	    if (phi>=fiat)
+        	Rt=(rcf*L/2)/(pi*rT*phi/2)+(rcf*L/2)/(pi*rB*phi/2);
+        else
+        	Rt=(rcf*(L-g)/2)/(pi*rT*rx1)+(rcf*(L-g)/2)/(pi*rB*rx2)+(rox*g)/(pi*rx1*rx2);
+
+		//Calculation of Temperature in the center of the filament (Thot) and in the edge of the device (Tcold)
+		kthcold=m*(2*rT);
+		kthhot=m*phi;
+		Icur=v/Rt;
+		Tcold = (Tcold + dt * (abs(v*Icur)/ kthcold + Tamb/ Tau_th)) / (1 + dt/ Tau_th);
+		Thot = (Thot + dt * (abs(v*Icur)/ kthhot + Tamb/ Tau_th)) / (1 + dt/ Tau_th);
+		T=Thot;
+		S=Es/(kb*T*T);
+        
+        //Calculation of effective diameter (phi) based on drift, diffusion, thermo-diffusion
+		phi=(AP*exp(-Aexp*(Edrift-alphaP*q*v)/(kb*T))+BP*(1/phi)*exp(-(Ediff)/(kb*T))-CP*S*(1/phi)*(Thot-Tcold)/(L/2))*dt+phi;
+		
+        //Constrain effective diameter between boundary conditions phi_max and phi_min	
+		if (phi > phi_max)
+			phi = phi_max;
+		else if (phi < phi_min)
+			phi = phi_min;
+
+		// device current
+		I(top,bot)<+Icur; 
+
+		//Record current timestep for the previous timestep at next timestep
+		p_time = $abstime;	
+
+	end
+endmodule

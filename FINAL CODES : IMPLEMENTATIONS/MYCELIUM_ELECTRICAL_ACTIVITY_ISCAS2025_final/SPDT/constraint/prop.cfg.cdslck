@@ -1,0 +1,16 @@
+#
+# Edit Lock-Stake file. CAUTION: Please do not change.
+#
+# Information about current Edit Lock Owner.
+#
+LockStakeVersion               1.1
+LoginName                      work
+HostName                       work-eda
+ProcessIdentifier              7884
+ProcessCreationTime_UTC        1719240858
+ProcessCreationTime_Readable   Mon Jun 24 22:54:18 2024 CST
+AppIdentifier                  /opt/IC617/tools/dfII/bin/64bit/virtuoso
+OSType                         lnx86
+ReasonForPlacingEditLock       
+FilePathUsedToEditLock         /home/work/Desktop/Neuromorphic_Memristive_CA/SPDT/constraint/prop.cfg
+TimeEditLocked                 Tue Jun 25 19:53:07 2024 CST
